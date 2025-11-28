@@ -48,4 +48,4 @@ function App() {
 
 ## Authors
 
-- [@octokatherine](https://www.github.com/octokatherine)
+- Oliver von Heißen
