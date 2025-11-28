@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Change API
+  version: 1.0.0
+  description: |
+    Execute a change request on a given project and branch. Returns logs from the change engine.
+servers:
+  - url: http://localhost:5000
+paths:
+  /projects/{projectId}/branches/{branchId}/change:
+    post:
+      operationId: executeChange
+      tags:
+        - Change
+      summary: Execute a change request
+      description: |
+        Accepts a JSON body with change_request and invokes the change engine.
+        Returns logs and propagates the status code from the engine. If change_request
+        is missing, returns 400 with an error message.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: Project identifier
+          schema:
+            type: string
+        - name: branchId
+          in: path
+          required: true
+          description: Branch identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - change_request
+              properties:
+                change_request:
+                  description: The change request payload passed to the engine.
+                  oneOf:
+                    - type: string
+                    - type: object
+            examples:
+              stringChangeRequest:
+                summary: String change request
+                value:
+                  change_request: "Rename element X to Y"
+              objectChangeRequest:
+                summary: Object change request
+                value:
+                  change_request:
+                    action: "rename"
+                    targetId: "elem-123"
+                    params:
+                      newName: "NewElementName"
+      responses:
+        '200':
+          description: Change executed successfully; logs returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogsResponse'
+              examples:
+                success:
+                  value:
+                    logs:
+                      - "Starting change engine..."
+                      - "Applied change successfully."
+        '400':
+          description: Invalid request; missing change_request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingChangeRequest:
+                  value:
+                    error: "Invalid request. Missing change_request."
+        default:
+          description: Response returned by the change engine (status code varies); logs included.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogsResponse'
+components:
+  schemas:
+    LogsResponse:
+      type: object
+      required:
+        - logs
+      properties:
+        logs:
+          description: Ordered log messages from the change engine.
+          type: array
+          items:
+            type: string
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message

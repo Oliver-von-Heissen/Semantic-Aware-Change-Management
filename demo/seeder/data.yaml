@@ -1,0 +1,80 @@
+projects:
+  - name: Coffee Machine
+    branches:
+      - name: main
+        elements:
+          - name: SystemAssembly
+            type: PartDefinition
+            children:
+              - name: WaterSubsystem
+                type: PartDefinition
+                children:
+                  - name: WaterReservoir
+                    type: PartDefinition
+                  - name: WaterFilter
+                    type: PartDefinition
+                  - name: WaterPump
+                    type: PartDefinition
+                  - name: WaterHeater
+                    type: PartDefinition
+                    children:
+                      - name: HeaterElement
+                        type: PartDefinition
+                      - name: TemperatureSensor
+                        type: PartDefinition
+                  - name: WaterLevelSensor
+                    type: PartDefinition
+              - name: BeanSubsystem
+                type: PartDefinition
+                children:
+                  - name: BeanHopper
+                    type: PartDefinition
+                  - name: Grinder
+                    type: PartDefinition
+                  - name: GrinderMotor
+                    type: PartDefinition
+              - name: BrewingSubsystem
+                type: PartDefinition
+                children:
+                  - name: BrewChamber
+                    type: PartDefinition
+                  - name: BrewValve
+                    type: PartDefinition
+                  - name: PressureSensor
+                    type: PartDefinition
+              - name: ControlSubsystem
+                type: PartDefinition
+                children:
+                  - name: MainController
+                    type: PartDefinition
+                  - name: FirmwareModule
+                    type: PartDefinition
+                  - name: SafetyController
+                    type: PartDefinition
+              - name: UserInterface
+                type: PartDefinition
+                children:
+                  - name: ButtonPanel
+                    type: PartDefinition
+                  - name: DisplayModule
+                    type: PartDefinition
+                  - name: StatusLEDs
+                    type: PartDefinition
+              - name: PowerSubsystem
+                type: PartDefinition
+                children:
+                  - name: PowerSupply
+                    type: PartDefinition
+                  - name: PowerSwitch
+                    type: PartDefinition
+              - name: WasteSubsystem
+                type: PartDefinition
+                children:
+                  - name: DripTray
+                    type: PartDefinition
+  - name: Autonomous Car
+    branches:
+    - name: main
+      elements:
+      - name: Car
+        type: Package
