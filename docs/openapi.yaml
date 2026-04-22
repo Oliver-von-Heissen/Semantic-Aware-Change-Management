@@ -35,15 +35,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - change_request
-              properties:
-                change_request:
-                  description: The change request payload passed to the engine.
-                  oneOf:
-                    - type: string
-                    - type: object
+              $ref: '#/components/schemas/ChangeRequest'
             examples:
               stringChangeRequest:
                 summary: String change request
@@ -86,8 +78,91 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogsResponse'
+
+  /projects/{projectId}/branches/{branchId}/context:
+    post:
+      operationId: getContext
+      tags:
+        - Context
+      summary: Retrieve context for a request
+      description: |
+        Accepts a JSON body with context_request and returns the prepared context
+        without running the change engine.
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: Project identifier
+          schema:
+            type: string
+        - name: branchId
+          in: path
+          required: true
+          description: Branch identifier
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContextRequest'
+            examples:
+              stringContextRequest:
+                summary: String context request
+                value:
+                  context_request: "Explain the propulsion subsystem"
+      responses:
+        '200':
+          description: Context retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContextResponse'
+              examples:
+                success:
+                  value:
+                    status: "success"
+                    context:
+                      - "{\"@id\": \"elem-1\", \"name\": \"Subsystem\"}"
+        '400':
+          description: Invalid request; missing context_request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingContextRequest:
+                  value:
+                    error: "Invalid request. Missing context_request."
+        '500':
+          description: Unexpected error while building context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
+    ChangeRequest:
+      type: object
+      required:
+        - change_request
+      properties:
+        change_request:
+          description: The change request payload passed to the engine.
+          oneOf:
+            - type: string
+            - type: object
+    ContextRequest:
+      type: object
+      required:
+        - context_request
+      properties:
+        context_request:
+          description: The request payload used to build context.
+          oneOf:
+            - type: string
+            - type: object
     LogsResponse:
       type: object
       required:
@@ -95,6 +170,20 @@ components:
       properties:
         logs:
           description: Ordered log messages from the change engine.
+          type: array
+          items:
+            type: string
+    ContextResponse:
+      type: object
+      required:
+        - status
+        - context
+      properties:
+        status:
+          type: string
+          description: Request status.
+        context:
+          description: Prepared context entries from the model.
           type: array
           items:
             type: string
