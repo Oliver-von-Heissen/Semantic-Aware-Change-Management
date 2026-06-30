@@ -1,0 +1,79 @@
+{
+  "systems": [
+    {
+      "id": "sys-1",
+      "name": "Coffee Machine",
+      "parts": [
+        { "id": "b1", "name": "SystemAssembly" },
+        { "id": "b2", "name": "WaterSubsystem" },
+        { "id": "b3", "name": "WaterReservoir" },
+        { "id": "b4", "name": "WaterFilter" },
+        { "id": "b5", "name": "WaterPump" },
+        { "id": "b6", "name": "WaterHeater" },
+        { "id": "b7", "name": "HeaterElement" },
+        { "id": "b8", "name": "TemperatureSensor" },
+        { "id": "b9", "name": "WaterLevelSensor" },
+        { "id": "b10", "name": "BeanSubsystem" },
+        { "id": "b11", "name": "BeanHopper" },
+        { "id": "b12", "name": "Grinder" },
+        { "id": "b13", "name": "GrinderMotor" },
+        { "id": "b14", "name": "BrewingSubsystem" },
+        { "id": "b15", "name": "BrewChamber" },
+        { "id": "b16", "name": "BrewValve" },
+        { "id": "b17", "name": "PressureSensor" },
+        { "id": "b18", "name": "ControlSubsystem" },
+        { "id": "b19", "name": "MainController" },
+        { "id": "b20", "name": "FirmwareModule" },
+        { "id": "b21", "name": "SafetyController" },
+        { "id": "b22", "name": "UserInterface" },
+        { "id": "b23", "name": "ButtonPanel" },
+        { "id": "b24", "name": "DisplayModule" },
+        { "id": "b25", "name": "StatusLEDs" },
+        { "id": "b26", "name": "PowerSubsystem" },
+        { "id": "b27", "name": "PowerSupply" },
+        { "id": "b28", "name": "PowerSwitch" },
+        { "id": "b29", "name": "WasteSubsystem" },
+        { "id": "b30", "name": "DripTray" }
+      ],
+      "connections": [
+        { "id": "c1", "fromBlockId": "b1", "toBlockId": "b2", "type": "composition" },
+        { "id": "c2", "fromBlockId": "b1", "toBlockId": "b10", "type": "composition" },
+        { "id": "c3", "fromBlockId": "b1", "toBlockId": "b14", "type": "composition" },
+        { "id": "c4", "fromBlockId": "b1", "toBlockId": "b18", "type": "composition" },
+        { "id": "c5", "fromBlockId": "b1", "toBlockId": "b22", "type": "composition" },
+        { "id": "c6", "fromBlockId": "b1", "toBlockId": "b26", "type": "composition" },
+        { "id": "c7", "fromBlockId": "b1", "toBlockId": "b29", "type": "composition" },
+        { "id": "c8", "fromBlockId": "b2", "toBlockId": "b3", "type": "composition" },
+        { "id": "c9", "fromBlockId": "b2", "toBlockId": "b4", "type": "composition" },
+        { "id": "c10", "fromBlockId": "b2", "toBlockId": "b5", "type": "composition" },
+        { "id": "c11", "fromBlockId": "b2", "toBlockId": "b6", "type": "composition" },
+        { "id": "c12", "fromBlockId": "b2", "toBlockId": "b9", "type": "composition" },
+        { "id": "c13", "fromBlockId": "b6", "toBlockId": "b7", "type": "composition" },
+        { "id": "c14", "fromBlockId": "b6", "toBlockId": "b8", "type": "composition" },
+        { "id": "c15", "fromBlockId": "b10", "toBlockId": "b11", "type": "composition" },
+        { "id": "c16", "fromBlockId": "b10", "toBlockId": "b12", "type": "composition" },
+        { "id": "c17", "fromBlockId": "b10", "toBlockId": "b13", "type": "composition" },
+        { "id": "c18", "fromBlockId": "b14", "toBlockId": "b15", "type": "composition" },
+        { "id": "c19", "fromBlockId": "b14", "toBlockId": "b16", "type": "composition" },
+        { "id": "c20", "fromBlockId": "b14", "toBlockId": "b17", "type": "composition" },
+        { "id": "c21", "fromBlockId": "b18", "toBlockId": "b19", "type": "composition" },
+        { "id": "c22", "fromBlockId": "b18", "toBlockId": "b20", "type": "composition" },
+        { "id": "c23", "fromBlockId": "b18", "toBlockId": "b21", "type": "composition" },
+        { "id": "c24", "fromBlockId": "b22", "toBlockId": "b23", "type": "composition" },
+        { "id": "c25", "fromBlockId": "b22", "toBlockId": "b24", "type": "composition" },
+        { "id": "c26", "fromBlockId": "b22", "toBlockId": "b25", "type": "composition" },
+        { "id": "c27", "fromBlockId": "b26", "toBlockId": "b27", "type": "composition" },
+        { "id": "c28", "fromBlockId": "b26", "toBlockId": "b28", "type": "composition" },
+        { "id": "c29", "fromBlockId": "b29", "toBlockId": "b30", "type": "composition" }
+      ]
+    },
+    {
+      "id": "sys-2",
+      "name": "Autonomous Car",
+      "parts": [
+        { "id": "a1", "name": "Car" }
+      ],
+      "connections": []
+    }
+  ]
+}
