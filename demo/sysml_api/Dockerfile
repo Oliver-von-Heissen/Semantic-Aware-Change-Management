@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y git curl
 WORKDIR /opt
 RUN git clone https://github.com/Systems-Modeling/SysML-v2-API-Services.git
 WORKDIR /opt/SysML-v2-API-Services
-RUN git checkout develop
+RUN git checkout 2026-04
 
 # Reconfigure JDBC to use compose postgresql
 RUN sed -i 's@jdbc:postgresql://localhost:5432@jdbc:postgresql://database:5432@' conf/META-INF/persistence.xml
