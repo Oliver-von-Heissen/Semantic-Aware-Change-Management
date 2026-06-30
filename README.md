@@ -54,3 +54,17 @@ python app.py
 
 - Oliver von Heißen
 - Kenneth Tagscherer
+
+## Citation
+
+If you use this work, please cite:
+
+```bibtex
+@article{vonHeien2026SemanticAwareCM,
+  title={Semantic-Aware Change Management for SysML v2 Using Large Language Models},
+  author={Oliver von Hei{\ss}en and Fabian Hanke and Aschot Hovemann and Roman Dumitrescu},
+  journal={Procedia CIRP},
+  year={2026},
+  url={https://api.semanticscholar.org/CorpusID:289158102}
+}
+```
