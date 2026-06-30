@@ -60,11 +60,17 @@ python app.py
 If you use this work, please cite:
 
 ```bibtex
-@article{vonHeien2026SemanticAwareCM,
-  title={Semantic-Aware Change Management for SysML v2 Using Large Language Models},
-  author={Oliver von Hei{\ss}en and Fabian Hanke and Aschot Hovemann and Roman Dumitrescu},
-  journal={Procedia CIRP},
-  year={2026},
-  url={https://api.semanticscholar.org/CorpusID:289158102}
+@article{VONHEIEN2026546,
+title = {Semantic-Aware Change Management for SysML v2 Using Large Language Models},
+journal = {Procedia CIRP},
+volume = {142},
+pages = {546-551},
+year = {2026},
+note = {36th CIRP Design Conference (CIRP Design 2026)},
+issn = {2212-8271},
+doi = {https://doi.org/10.1016/j.procir.2026.05.306},
+url = {https://www.sciencedirect.com/science/article/pii/S2212827126008802},
+author = {Oliver {von Heißen} and Fabian Hanke and Aschot Hovemann and Roman Dumitrescu},
+keywords = {Model-Based Systems Engineering, SysML v2, Large Language Models, Engineering Automation}
 }
 ```
