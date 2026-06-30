@@ -2,78 +2,98 @@ import json
 import logging
 import os
 import uuid
+from typing import Any, Dict, List, Optional
+
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 
+# Configuration
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:9000")
 DATA_PATH = "data.json"
 
+# Endpoints
+ENDPOINTS = {
+    "PROJECTS": "/projects",
+    "COMMITS": "/projects/{project_id}/commits",
+}
+
+# Setup Logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 logger = logging.getLogger(__name__)
 
+# Use a Session for connection pooling
+session = requests.Session()
+retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
+session.mount("http://", HTTPAdapter(max_retries=retries))
+session.mount("https://", HTTPAdapter(max_retries=retries))
 
-def send_request(method, endpoint, body=None):
+
+def send_request(method: str, endpoint: str, body: Any = None) -> requests.Response:
     url = f"{API_BASE_URL}{endpoint}"
-
     logger.debug(f"Sending {method} request to {url} with body: {body}")
-    response = requests.request(
-        method=method, headers={"Content-Type": "application/json"}, url=url, json=body
-    )
 
-    if response.status_code != 200:
-        logger.error(
-            f"Request to {url} failed with status code {response.status_code}: {response.text}"
+    try:
+        response = session.request(
+            method=method,
+            headers={"Content-Type": "application/json"},
+            url=url,
+            json=body,
+            timeout=10,
         )
+        # Raise exception for 4xx or 5xx status codes
+        response.raise_for_status()
+        return response
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request to {url} failed: {e}")
+        if hasattr(e, "response") and e.response is not None:
+            logger.error(f"Response body: {e.response.text}")
+        raise
 
-    return response
 
-
-def create_project(project_name, project_description):
+def create_project(project_name: str, project_description: str) -> Dict[str, Any]:
     project_data = {
         "@type": "Project",
         "name": project_name,
         "description": project_description,
     }
 
-    response = send_request("POST", "/projects", project_data)
-
-    if response.status_code == 200:
-        project = response.json()
-        return project
-    else:
-        print("Problem in creating the project")
+    response = send_request("POST", ENDPOINTS["PROJECTS"], project_data)
+    return response.json()
 
 
-def push_commit(project_id, branch_id, change):
-    commit_post_url = f"/projects/{project_id}/commits?branchId={branch_id}"
+def push_commit(
+    project_id: str, branch_id: str, change: List[Dict[str, Any]]
+) -> Optional[str]:
+    endpoint = (
+        ENDPOINTS["COMMITS"].format(project_id=project_id) + f"?branchId={branch_id}"
+    )
     commit_body = {"@type": "Commit", "change": change}
-    logger.debug(f"Creating commit {commit_body}")
-    response = send_request("POST", commit_post_url, commit_body)
 
-    if response.status_code == 200:
-        commit_response_json = response.json()
-        return commit_response_json.get("@id")
-    else:
-        print(f"Problem in creating commit {change} for project {project_id}")
-        print(response)
-        return None
+    logger.info(f"Pushing commit with {len(change)} changes to project {project_id}")
+    response = send_request("POST", endpoint, commit_body)
+
+    return response.json().get("@id")
 
 
-def build_change_list(parts, connections, id_map=None):
+def build_change_list(
+    parts: List[Dict], connections: List[Dict], id_map: Dict[str, str]
+) -> List[Dict]:
     """
     Build a flat list of DataVersion change objects from a system's flat
     `parts` list and `connections` list. A composition connection
     (from -> to) makes the `to` part owned by the `from` part.
     Also fills id_map[json_id] = @id for later lookup.
     """
-    if id_map is None:
-        id_map = {}
-
     # Derive ownership from composition connections: child -> parent
-    parent_of = {}
-    for connection in connections:
-        if connection.get("type") == "composition":
-            parent_of[connection["toBlockId"]] = connection["fromBlockId"]
-
+    parent_of = {
+        conn["toBlockId"]: conn["fromBlockId"]
+        for conn in connections
+        if conn.get("type") == "composition"
+    }
     # Assign a server @id to every part up front so owners can be referenced
     for part in parts:
         id_map[part["id"]] = str(uuid.uuid4())
@@ -104,33 +124,41 @@ def build_change_list(parts, connections, id_map=None):
     return change
 
 
-def parse_system(system):
-    response = create_project(system["name"], "")
-    if not response:
-        return
+def parse_system(system: Dict[str, Any]):
+    try:
+        project = create_project(system["name"], "")
+        project_id = project["@id"]
+        branch_main_id = project["defaultBranch"]["@id"]
 
-    project_id = response["@id"]
-    branch_main_id = response["defaultBranch"]["@id"]
+        id_map = {}
+        change = build_change_list(
+            system.get("parts", []),
+            system.get("connections", []),
+            id_map=id_map,
+        )
 
-    id_map = {}
-    change = build_change_list(
-        system.get("parts", []),
-        system.get("connections", []),
-        id_map=id_map,
-    )
-
-    # Now you know every @id, without asking the server:
-    # e.g. id_map["b6"] gives you the UUID you assigned.
-
-    push_commit(project_id, branch_main_id, change)
+        push_commit(project_id, branch_main_id, change)
+        logger.info(f"Successfully seeded system: {system['name']}")
+    except Exception as e:
+        logger.error(f"Failed to parse system {system.get('name', 'Unknown')}: {e}")
 
 
 def main():
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f) or {}
+    if not os.path.exists(DATA_PATH):
+        logger.error(f"Data file not found: {DATA_PATH}")
+        return
 
-    # Iterate Systems
-    for system in data.get("systems", []):
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
+        try:
+            data = json.load(f) or {}
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode JSON: {e}")
+            return
+
+    systems = data.get("systems", [])
+    logger.info(f"Found {len(systems)} systems to seed.")
+
+    for system in systems:
         parse_system(system)
 
 
