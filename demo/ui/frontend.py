@@ -16,52 +16,69 @@ CHANGE_ENGINE_URL = os.environ.get("CHANGE_ENGINE_URL", "http://localhost:8000")
 # REST helpers
 # ----------------------------
 
+
 def _safe_get(url, params=None):
     try:
-        r = requests.get(url, params=params, timeout=30)
+        r = requests.get(url, params=params, timeout=120)
         r.raise_for_status()
         return r.json()
     except Exception as e:
         st.error(f"GET failed: {e}")
         return None
 
+
 def _safe_post(url, json_body=None):
     try:
-        r = requests.post(url, json=json_body, timeout=30)
+        r = requests.post(url, json=json_body, timeout=120)
         r.raise_for_status()
         return r.json()
     except Exception as e:
         st.error(f"POST failed: {e}")
         return None
 
+
 # ----------------------------
 # API wrapper functions
 # ----------------------------
+
 
 @st.cache_data(show_spinner=True)
 def get_projects():
     return _safe_get(f"{SYSML_API_URL}/projects") or []
 
+
 @st.cache_data(show_spinner=True)
 def get_branches(project_id: str):
     return _safe_get(f"{SYSML_API_URL}/projects/{project_id}/branches") or []
 
+
 def get_branches_for_commit(project_id: str):
     return _safe_get(f"{SYSML_API_URL}/projects/{project_id}/branches") or []
+
 
 def get_commits(project_id, branch_id):
     return _safe_get(f"{SYSML_API_URL}/projects/{project_id}/branches") or []
 
+
 def get_model(project_id: str, commit_id: str):
-    return _safe_get(f"{SYSML_API_URL}/projects/{project_id}/commits/{commit_id}/elements") or {}
+    return (
+        _safe_get(f"{SYSML_API_URL}/projects/{project_id}/commits/{commit_id}/elements")
+        or {}
+    )
+
 
 def send_change_request(project_id: str, branch_id: str, description: str):
     payload = {"change_request": description}
-    return _safe_post(f"{CHANGE_ENGINE_URL}/projects/{project_id}/branches/{branch_id}/change", json_body=payload) or {"status": "error"}
+    return _safe_post(
+        f"{CHANGE_ENGINE_URL}/projects/{project_id}/branches/{branch_id}/change",
+        json_body=payload,
+    ) or {"status": "error"}
+
 
 # ----------------------------
 # UI helpers
 # ----------------------------
+
 
 def update_head_commit(project_id, branch_id):
     branches = get_branches_for_commit(project_id)
@@ -72,6 +89,7 @@ def update_head_commit(project_id, branch_id):
             st.session_state["head_commit"] = branch["head"]["@id"]
             break
 
+
 def _normalize_id(value) -> Optional[str]:
     """Return the string '@id' from a value shaped like {'@id': ...} or a string."""
     if value is None:
@@ -79,6 +97,7 @@ def _normalize_id(value) -> Optional[str]:
     if isinstance(value, dict):
         return str(value.get("@id")) if value.get("@id") is not None else None
     return str(value)
+
 
 def model_to_markdown(elements: List[dict]) -> str:
     """Convert elements to markdown; indent owned elements under their owner (@id)."""
@@ -129,10 +148,12 @@ def model_to_markdown(elements: List[dict]) -> str:
 
     return "\n".join(lines)
 
+
 def clear_cache():
     for key in ("model_cache", "model_branch"):
         if key in st.session_state:
             del st.session_state[key]
+
 
 # ----------------------------
 # UI
@@ -145,11 +166,15 @@ st.header("Model Management")
 
 projects = get_projects()
 project_options = ["Please choose..."] + [p["name"] for p in projects]
-selected_project_name = st.selectbox("Project", project_options, index=0, key="project_select")
+selected_project_name = st.selectbox(
+    "Project", project_options, index=0, key="project_select"
+)
 
 selected_project_id = None
 if selected_project_name != "Please choose...":
-    selected_project_id = next((p["@id"] for p in projects if p["name"] == selected_project_name), None)
+    selected_project_id = next(
+        (p["@id"] for p in projects if p["name"] == selected_project_name), None
+    )
 
 # Branch selection (depends on project)
 
@@ -158,11 +183,15 @@ if selected_project_id:
     branches = get_branches(selected_project_id)
 
 branch_options = ["Please choose..."] + [b["name"] for b in branches]
-selected_branch_name = st.selectbox("Branch", branch_options, index=0, key="branch_select")
+selected_branch_name = st.selectbox(
+    "Branch", branch_options, index=0, key="branch_select"
+)
 
 selected_branch_id = None
 if selected_branch_name != "Please choose...":
-    selected_branch_id = next(((b["@id"]) for b in branches if b["name"] == selected_branch_name), None)
+    selected_branch_id = next(
+        ((b["@id"]) for b in branches if b["name"] == selected_branch_name), None
+    )
 
 # Commit Update
 
@@ -178,7 +207,10 @@ if selected_branch_id:
 st.subheader("Model")
 
 if selected_branch_id:
-    if "model_cache" not in st.session_state or st.session_state.get("model_branch") != selected_branch_id:
+    if (
+        "model_cache" not in st.session_state
+        or st.session_state.get("model_branch") != selected_branch_id
+    ):
         # First time or branch changed -> fetch fresh model
         model = get_model(selected_project_id, st.session_state["head_commit"])
         st.session_state["model_cache"] = model
@@ -200,7 +232,11 @@ st.markdown("---")
 
 st.header("Change Management")
 
-change_desc = st.text_input("Change Request", placeholder="Please desribe your desired change...", key="change_desc")
+change_desc = st.text_input(
+    "Change Request",
+    placeholder="Please desribe your desired change...",
+    key="change_desc",
+)
 send_clicked = st.button("Apply change", use_container_width=True)
 
 if send_clicked:
@@ -210,13 +246,17 @@ if send_clicked:
         st.warning("Please enter a change description.")
     else:
         with st.spinner("Sending change request..."):
-            res = send_change_request(selected_project_id, selected_branch_id, change_desc.strip())
+            res = send_change_request(
+                selected_project_id, selected_branch_id, change_desc.strip()
+            )
 
             if not res:
                 st.stop()  # already showed error in _safe_post
 
             # Save return value to session so they persist across rerun
-            st.session_state["processing_time_seconds"] = res.get("processing_time_seconds", [])
+            st.session_state["processing_time_seconds"] = res.get(
+                "processing_time_seconds", []
+            )
             tokens = res.get("tokens", {})
             if isinstance(tokens, dict):
                 st.session_state["input_approach"] = tokens.get("input_approach", [])
