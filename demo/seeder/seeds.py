@@ -32,7 +32,9 @@ session.mount("http://", HTTPAdapter(max_retries=retries))
 session.mount("https://", HTTPAdapter(max_retries=retries))
 
 
-def send_request(method: str, endpoint: str, body: Any = None) -> requests.Response:
+def send_request(
+    method: str, endpoint: str, body: Any = None, timeout: int = 10
+) -> requests.Response:
     url = f"{API_BASE_URL}{endpoint}"
     logger.debug(f"Sending {method} request to {url} with body: {body}")
 
@@ -42,7 +44,7 @@ def send_request(method: str, endpoint: str, body: Any = None) -> requests.Respo
             headers={"Content-Type": "application/json"},
             url=url,
             json=body,
-            timeout=10,
+            timeout=timeout,
         )
         # Raise exception for 4xx or 5xx status codes
         response.raise_for_status()
@@ -74,7 +76,7 @@ def push_commit(
     commit_body = {"@type": "Commit", "change": change}
 
     logger.info(f"Pushing commit with {len(change)} changes to project {project_id}")
-    response = send_request("POST", endpoint, commit_body)
+    response = send_request("POST", endpoint, commit_body, timeout=120)
 
     return response.json().get("@id")
 
@@ -108,7 +110,8 @@ def build_change_list(
         }
 
         parent_json_id = parent_of.get(part["id"])
-        if parent_json_id is not None:
+        # Owner nur setzen, wenn der Parent ein echtes Part ist
+        if parent_json_id is not None and parent_json_id in id_map:
             payload["owner"] = {"@id": id_map[parent_json_id]}
 
         change.append(
@@ -140,7 +143,7 @@ def parse_system(system: Dict[str, Any]):
         push_commit(project_id, branch_main_id, change)
         logger.info(f"Successfully seeded system: {system['name']}")
     except Exception as e:
-        logger.error(f"Failed to parse system {system.get('name', 'Unknown')}: {e}")
+        logger.exception(f"Failed to parse system {system.get('name', 'Unknown')}")
 
 
 def main():
