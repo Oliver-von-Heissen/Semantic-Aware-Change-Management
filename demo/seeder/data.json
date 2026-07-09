@@ -3,6 +3,7 @@
     {
       "id": "sys-1",
       "name": "Coffee Machine",
+      "description": "System model of a simple coffee machine",
       "parts": [
         { "id": "b1", "name": "SystemAssembly" },
         { "id": "b2", "name": "WaterSubsystem" },
