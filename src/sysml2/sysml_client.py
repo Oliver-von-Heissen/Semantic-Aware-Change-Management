@@ -4,7 +4,9 @@ from src.external.sysml2.commit import push_commit
 from src.external.sysml2.element import get_project_element, get_project_elements
 from src.external.sysml2.meta import get_datatypes
 from src.external.sysml2.project import get_project
+
 logger = logging.getLogger(__name__)
+
 
 class SysMLClient:
 
@@ -32,7 +34,9 @@ class SysMLClient:
         datatypes = get_datatypes()
         self.datatypes = [datatype["title"] for datatype in datatypes["$defs"].values()]
 
-        logger.info(f"Working on project {self.project_name}({self.project_id}) on branch main({self.branch_id}) on HEAD({self.commit_id})")
+        logger.info(
+            f"Working on project {self.project_name}({self.project_id}) on branch main({self.branch_id}) on HEAD({self.commit_id})"
+        )
 
     def get_all_elements(self):
         elements = get_project_elements(self.project_id, self.commit_id)
@@ -41,12 +45,7 @@ class SysMLClient:
     def create(self, **attrs):
         """Create a new element and add it to the model."""
         logger.debug(f"Creating new element with attributes {attrs}")
-        create_element = {
-            "@type": "DataVersion",
-            "payload": {
-                **attrs
-            }
-        }
+        create_element = {"@type": "DataVersion", "payload": {**attrs}}
         self.change.append(create_element)
 
     def update(self, element_id, **attrs):
@@ -54,12 +53,8 @@ class SysMLClient:
         logger.debug(f"Updating element({element_id}) with attributes {attrs}")
         update_element = {
             "@type": "DataVersion",
-            "payload": {
-                **attrs
-            },
-            "identity": {
-                "@id": element_id
-            }
+            "payload": {**attrs},
+            "identity": {"@id": element_id},
         }
         self.change.append(update_element)
 
@@ -67,10 +62,8 @@ class SysMLClient:
         logger.debug(f"Deleting the element({element_id})")
         delete_element = {
             "@type": "DataVersion",
-            "payload":None,     # no payload removes the element
-            "identity": {
-                "@id": element_id
-            }
+            "payload": None,  # no payload removes the element
+            "identity": {"@id": element_id},
         }
         self.change.append(delete_element)
 
@@ -84,24 +77,48 @@ class SysMLClient:
         element = get_project_element(self.project_id, self.commit_id, element_id)
         return element
 
+    def get_staged_or_remote(self, element_id):
+        """Return the current view of an element, layering staged (uncommitted)
+        changes on top of the committed remote state.
+
+        Returns ``None`` if the element neither exists remotely nor is staged,
+        or if it is staged for deletion.
+        """
+        remote = self.get_element(element_id)
+        state = dict(remote) if remote else None
+
+        for change in self.change:
+            payload = change.get("payload")
+            identity = change.get("identity") or {}
+            change_id = identity.get("@id") or (payload or {}).get("@id")
+            if change_id != element_id:
+                continue
+            if payload is None:
+                state = None  # staged deletion
+            else:
+                state = {**(state or {}), **payload}
+        return state
+
     # Returns directly / immediate owned elements for a given element in a given commit of a given project
     def print_owned_elements(self, element_id, indent):
-        
+
         # Fetch the element in the given commit of the given project
         element_data = self.get_element(element_id)
 
         # Print single element to console
-        element_name_to_print = element_data['name'] if element_data['name'] else 'N/A'
-        element_type = element_data ['@type']
+        element_name_to_print = element_data["name"] if element_data["name"] else "N/A"
+        element_type = element_data["@type"]
         print(f"{indent} - {element_name_to_print} ({element_type})")
-        
+
         if element_data:
-            owned_elements = element_data['ownedElement']
+            owned_elements = element_data["ownedElement"]
             if len(owned_elements) > 0:
                 for owned_element in owned_elements:
-                    self.print_owned_elements(owned_element['@id'], indent+' ')
+                    self.print_owned_elements(owned_element["@id"], indent + " ")
         else:
-            print(f"Unable to fetch element with id '{element_id}' in commit '{self.commit_id}' of project '{self.project_id}'")
+            print(
+                f"Unable to fetch element with id '{element_id}' in commit '{self.commit_id}' of project '{self.project_id}'"
+            )
 
     def print_project_structure(self):
         print("Project Structure:")
@@ -109,5 +126,5 @@ class SysMLClient:
         if not all_project_elements:
             print("EMPTY")
         for element in all_project_elements:
-            if not element.get('owner'):
-                self.print_owned_elements(element['@id'], '')
+            if not element.get("owner"):
+                self.print_owned_elements(element["@id"], "")
